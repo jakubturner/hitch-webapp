@@ -27,17 +27,15 @@ def render_entry() -> "html":
 
 
 @app.route('/viewlog')
-def view_the_log() -> str:
+def view_the_log() -> "html":
     contents = []
     with open('vsearch.log') as log:
         for line in log:
             contents.append([])
-            for item in line.split():
+            for item in line.split('|'):
                 contents[-1].append(escape(item))
-
-
-        content = log.read()
-        return escape(content)
+    titles = ('Form Data', 'Remote_addr', 'User_Agent', 'Results')
+    return render_template('viewlog.html', the_title='View Log', the_row_titles=titles, the_data=contents,)
 
 
 if __name__ == '__main__':
