@@ -1,31 +1,27 @@
 from flask import Flask, render_template, request, escape
 from vsearch import search4letters
-import mysql.connector
+from DBcm import UseDatabase
+
 app = Flask(__name__)
+
+app.config['dbconfig'] = {
+    'host': '127.0.0.1',
+    'user': 'vsearch',
+    'password': 'searchpasswd',
+    'database': 'vsearchLogDB',
+}
 
 
 def log_request(req: 'flask_request', res: str) -> None:
     # with open('vsearch.log', 'a') as log:
     #     print(req.form, req.remote_addr, req.user_agent, res, file=log, sep=' | ')
-    dbconfig = {
-        'host': '127.0.0.1',
-        'user': 'vsearch',
-        'password': 'vsearchpasswd',
-        'database': 'vsearchLogDB',
-    }
 
-    conn = mysql.connector.connect(**dbconfig)
-    cursor = conn.cursor()
+    with UseDatabase(app.config['dbconfig']) as cursor:
+        _SQL = """insert into log (phrase, letters, ip, browser_string, results) values (%s,%s,%s,%s,%s)"""
 
-    _SQL = """insert into log (phrase, letters, ip, browser_string, results) values (%s,%s,%s,%s,%s)"""
-
-    cursor.execute(_SQL, (req.form['phrase'],
-                          req.form['letters'], req.remote_addr, req.user_agent.string,
-                          res,))
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+        cursor.execute(_SQL, (req.form['phrase'],
+                              req.form['letters'], req.remote_addr, req.user_agent.string,
+                              res,))
 
 
 @app.route('/search4', methods=['POST'])
