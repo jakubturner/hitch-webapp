@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request, escape
+from flask import Flask, render_template, request, escape, session
 from vsearch import search4letters
+
+from checker import check_logged_in
 from DBcm import UseDatabase
 
 app = Flask(__name__)
+app.secret_key = 'YouWillNeverGuessMySecretKey'
 
 app.config['dbconfig'] = {
     'host': '127.0.0.1',
@@ -42,6 +45,7 @@ def render_entry() -> "html":
 
 
 @app.route('/viewlog')
+@check_logged_in
 def view_the_log() -> "html":
     with UseDatabase(app.config['dbconfig']) as cursor:
         _SQL = """select phrase, letters, ip, browser_string, results from log"""
@@ -58,6 +62,18 @@ def view_the_log() -> "html":
     # titles = ('Form Data', 'Remote_addr', 'User_Agent', 'Results')
 
     return render_template('viewlog.html', the_title='View Log', the_row_titles=titles, the_data=contents, )
+
+
+@app.route('/login')
+def do_login() -> str:
+    session['logged_in'] = True
+    return 'You are now logged in'
+
+
+@app.route('/logout')
+def do_logout() -> str:
+    session.pop('logged_in')
+    return 'You are now logged out'
 
 
 if __name__ == '__main__':
